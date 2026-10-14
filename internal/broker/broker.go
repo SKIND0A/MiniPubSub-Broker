@@ -4,14 +4,15 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/SKIND0A/MiniPubSub/internal"
+	internal "github.com/SKIND0A/MiniPubSub/internal/error"
 	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
 
 type Broker struct {
 	mu      sync.RWMutex
 	topics  map[string]*Topic
-	counter atomic.Uint64
+	counter atomic.Uint64 // Счетчик отправленных сообщений
+	dropped atomic.Uint64 // Счетчик потерь сообщений
 }
 
 func NewBroker() *Broker {
@@ -20,9 +21,12 @@ func NewBroker() *Broker {
 	}
 }
 
-
 func (b *Broker) PublishedCount() uint64 {
 	return b.counter.Load()
+}
+
+func (b *Broker) DroppedCount() uint64 {
+	return b.dropped.Load()
 }
 
 // Создаем новый топик
@@ -60,7 +64,10 @@ func (b *Broker) PublishTopic(topicName string, msg models.Message) error {
 	if err != nil {
 		return err
 	}
-	topic.PublishMsg(msg)
+	dropped := topic.PublishMsg(msg)
+	if dropped > 0{
+		b.dropped.Add(uint64(dropped))
+	}
 	b.counter.Add(1)
 	return nil
 }
