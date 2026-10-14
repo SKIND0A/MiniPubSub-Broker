@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/SKIND0A/MiniPubSub/internal/handler"
 	"github.com/SKIND0A/MiniPubSub/internal/storage"
 )
 
 func main() {
 	fmt.Println("CLI-управление Broker")
 	Storage := storage.NewStorageM()
+	Handler := handler.NewHandler(Storage)
 	scanner := bufio.NewScanner(os.Stdin)
 	for{
 		scanner.Scan()
 		Input := scanner.Text()
 		switch Input{
 		case "1":
-			// Запуск http-сервера
+			handler.StartHTTPServer(Handler)
 		case "2":
 		case "3":
 		case "0":

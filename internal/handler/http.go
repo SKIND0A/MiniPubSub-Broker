@@ -8,12 +8,25 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
 
-type Handler struct{}
+type Handler struct{
+	storage models.StorageMessage
+}
 
+func NewHandler(i models.StorageMessage) *Handler{
+	return &Handler{
+		storage: i,
+	}
+}
 
-func StartHTTPServer(){
+func (h *Handler)NewMessege(w http.ResponseWriter, r * http.Request){
+	
+}
+
+func StartHTTPServer(h * Handler){
 	fmt.Println("Запуск HTTP-сервера, для остановки нажмите ctrl+C")
 	fmt.Println("localhost:8080")
 	mux := http.NewServeMux()
@@ -22,11 +35,13 @@ func StartHTTPServer(){
 		Handler: mux,
 	}
 
-	// handlers
+	mux.HandleFunc("/newmessege", h.NewMessege)
 
 	go func(){
 		if err := server.ListenAndServe(); err != nil{
-			//error prodaction
+			if err.Error() == "http: Server closed"{}else{
+				fmt.Print("Ошибка запуска по причине", err)
+			}
 		}
 	}()
 
