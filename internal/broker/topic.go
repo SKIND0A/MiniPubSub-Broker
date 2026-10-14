@@ -62,16 +62,17 @@ func (t *Topic) Unsubscribe(id string) error {
 }
 
 // Рассылаем каждому сабу сообщение в его буфер канал
-func (t *Topic) PublishMsg(msg models.Message) {
+func (t *Topic) PublishMsg(msg models.Message) int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
+	dropped := 0
 	for _, sub := range t.subs {
 		select {
 		case sub.ch <- msg:
-
 		default:
+			 dropped++
 		}
 	}
+	return dropped
 }
-
