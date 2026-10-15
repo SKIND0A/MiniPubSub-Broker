@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	internal "github.com/SKIND0A/MiniPubSub/internal/error"
 	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
 
@@ -29,19 +31,19 @@ func (h *Handler)NewPublish(w http.ResponseWriter, r * http.Request){
 	fmt.Println("Поступил запрос на публикацию")
 
 	if r.Method != http.MethodPost{
-//		http.Error(w, //error ,http.StatusBadRequest)
+		http.Error(w, internal.ErrRequstMethod.Error() ,http.StatusBadRequest)
 		return
 	}
-
+	
 	topic := r.PathValue("topic")
 	if strings.TrimSpace(topic) == ""{
-		// http.Err
+		http.Error(w, internal.ErrRequstTopic.Error(), http.StatusBadRequest)
 		return
 	}
 
 	userType := r.Header.Get("Content-type") //проверка контента
 	if !strings.HasPrefix(userType, "application/json"){
-//		http.Error(w, //error, http.StatusUnsupportedMediaType)
+		http.Error(w, internal.ErrRequstType.Error(), http.StatusUnsupportedMediaType)
 		return
 	}
 
@@ -53,20 +55,20 @@ func (h *Handler)NewPublish(w http.ResponseWriter, r * http.Request){
 		var unmarshallTypeError *json.UnmarshalTypeError
 		switch {
 			case errors.As(err, &syntaxError):
-				http.Error(w, , http.StatusBadRequest)
+				http.Error(w, internal.ErrRequstSyntax.Error(), http.StatusBadRequest)
 			case errors.As(err, &unmarshallTypeError):
-				http.Error(w, , http.StatusBadRequest)
+				http.Error(w, internal.ErrUnmarshallRequst.Error(), http.StatusBadRequest)
 			case errors.Is(err, io.EOF): //пустое тело
-				http.Error(w, , http.StatusBadRequest)
+				http.Error(w, internal.ErrBodyEmpty.Error(), http.StatusBadRequest)
 			case strings.HasPrefix(err.Error(), "json: unknown field"):
-				//error при лишних неизвестных полях (при наличий DisallowUnknownFields)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			default:
-				http.Error(w, , http.StatusBadRequest)
+				http.Error(w, internal.UnknownErr.Error(), http.StatusBadRequest)
 			}
 	}
 
 	if err := h.storage.NewMessage([]byte(data.PayLoad)); err != nil{
-		http.Error(w, err, http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -90,7 +92,9 @@ func StartHTTPServer(h * Handler){
 
 	go func(){
 		if err := server.ListenAndServe(); err != nil{
-			if err.Error() == "http: Server closed"{}else{
+			if err.Error() == "http: Server closed"{
+				fmt.Println(err.Error())
+			}else{
 				fmt.Print("Ошибка запуска по причине", err)
 			}
 		}
