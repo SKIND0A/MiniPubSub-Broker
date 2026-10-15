@@ -8,6 +8,14 @@ type Subscriber struct {
 	quit chan struct{}
 }
 
+func NewSubscriber(id string, bufferSize int) *Subscriber {
+    return &Subscriber{
+        id:   id,
+        ch:   make(chan models.Message, bufferSize),
+        quit: make(chan struct{}),
+    }
+}
+
 func (s *Subscriber) Medssage() <-chan models.Message {
 	return s.ch
 }

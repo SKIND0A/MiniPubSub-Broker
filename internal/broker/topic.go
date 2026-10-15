@@ -3,7 +3,7 @@ package broker
 import (
 	"sync"
 
-	"github.com/SKIND0A/MiniPubSub/internal"
+	internal "github.com/SKIND0A/MiniPubSub/internal/error"
 
 	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
@@ -22,15 +22,14 @@ func NewTopic(name string) *Topic {
 }
 
 // Закрываем топик
-func (t *Topic) CloseTopic(){
+func (t *Topic) CloseTopic() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	for _, sub := range t.subs{
+	for _, sub := range t.subs {
 		sub.CloseChan()
 	}
 	clear(t.subs)
 }
-
 
 // Добавляем саба в топик
 func (t *Topic) Subscribe(sub *Subscriber) error {
@@ -71,7 +70,7 @@ func (t *Topic) PublishMsg(msg models.Message) int {
 		select {
 		case sub.ch <- msg:
 		default:
-			 dropped++
+			dropped++
 		}
 	}
 	return dropped
