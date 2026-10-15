@@ -11,5 +11,5 @@ type Message struct {
 }
 
 type MRequest struct {
-	PayLoad []byte `json:"payload"`
+	PayLoad string `json:"payload"`
 }
