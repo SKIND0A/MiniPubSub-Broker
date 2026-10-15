@@ -2,10 +2,13 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,8 +25,56 @@ func NewHandler(i models.StorageMessage) *Handler{
 	}
 }
 
-func (h *Handler)NewMessege(w http.ResponseWriter, r * http.Request){
+func (h *Handler)NewPublish(w http.ResponseWriter, r * http.Request){
+	fmt.Println("Поступил запрос на публикацию")
+
+	if r.Method != http.MethodPost{
+//		http.Error(w, //error ,http.StatusBadRequest)
+		return
+	}
+
+	topic := r.PathValue("topic")
+	if strings.TrimSpace(topic) == ""{
+		// http.Err
+		return
+	}
+
+	userType := r.Header.Get("Content-type") //проверка контента
+	if !strings.HasPrefix(userType, "application/json"){
+//		http.Error(w, //error, http.StatusUnsupportedMediaType)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 1024)
+	var data models.MRequest
+	unmarsh := json.NewDecoder(r.Body)
+	if err := unmarsh.Decode(&data); err != nil{
+		var syntaxError *json.SyntaxError
+		var unmarshallTypeError *json.UnmarshalTypeError
+		switch {
+			case errors.As(err, &syntaxError):
+				http.Error(w, , http.StatusBadRequest)
+			case errors.As(err, &unmarshallTypeError):
+				http.Error(w, , http.StatusBadRequest)
+			case errors.Is(err, io.EOF): //пустое тело
+				http.Error(w, , http.StatusBadRequest)
+			case strings.HasPrefix(err.Error(), "json: unknown field"):
+				//error при лишних неизвестных полях (при наличий DisallowUnknownFields)
+			default:
+				http.Error(w, , http.StatusBadRequest)
+			}
+	}
+
+	if err := h.storage.NewMessage([]byte(data.PayLoad)); err != nil{
+		http.Error(w, err, http.StatusBadRequest)
+		return
+	}
+
 	
+	w.Header().Set("Content-Type","applictaion/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"success"}`))
+
 }
 
 func StartHTTPServer(h * Handler){
@@ -35,7 +86,7 @@ func StartHTTPServer(h * Handler){
 		Handler: mux,
 	}
 
-	mux.HandleFunc("/newmessege", h.NewMessege)
+	mux.HandleFunc("/api/v1/topics/{topic}/publish", h.NewPublish)
 
 	go func(){
 		if err := server.ListenAndServe(); err != nil{
