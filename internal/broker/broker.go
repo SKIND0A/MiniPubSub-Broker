@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/SKIND0A/MiniPubSub/internal"
+	internal "github.com/SKIND0A/MiniPubSub/internal/error"
 	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
 
@@ -19,7 +19,6 @@ func NewBroker() *Broker {
 		topics: make(map[string]*Topic),
 	}
 }
-
 
 func (b *Broker) PublishedCount() uint64 {
 	return b.counter.Load()
