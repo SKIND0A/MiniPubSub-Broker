@@ -20,7 +20,7 @@ func (s *Subscriber) ID() string {
 	return s.id
 }
 
-func (s *Subscriber) Medssage() <-chan models.Message {
+func (s *Subscriber) Message() <-chan models.Message {
 	return s.ch
 }
 
