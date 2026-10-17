@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/SKIND0A/MiniPubSub/internal/broker"
 	"github.com/SKIND0A/MiniPubSub/internal/handler"
-	"github.com/SKIND0A/MiniPubSub/internal/storage"
+	"github.com/SKIND0A/MiniPubSub/internal/models"
 )
 
 func main() {
 	fmt.Println("CLI-управление Broker")
-	Storage := storage.NewStorageM()
-	Handler := handler.NewHandler(Storage)
+	Broker := broker.NewBroker()
+	Handler := handler.NewHandler(models.Message{}, Broker)
 	scanner := bufio.NewScanner(os.Stdin)
 	for{
 		scanner.Scan()
