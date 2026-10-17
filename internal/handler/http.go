@@ -55,14 +55,19 @@ func (h *Handler)NewPublishHandler(w http.ResponseWriter, r * http.Request){
 			switch {
 				case errors.As(err, &syntaxError):
 					http.Error(w, internal.ErrRequstSyntax.Error(), http.StatusBadRequest)
+					return
 				case errors.As(err, &unmarshallTypeError):
 					http.Error(w, internal.ErrUnmarshallRequst.Error(), http.StatusBadRequest)
+					return
 				case errors.Is(err, io.EOF): //пустое тело
 					http.Error(w, internal.ErrBodyEmpty.Error(), http.StatusBadRequest)
+					return
 				case strings.HasPrefix(err.Error(), "json: unknown field"):
 					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
 				default:
 					http.Error(w, internal.UnknownErr.Error(), http.StatusBadRequest)
+					return
 			}
 		}
 	}else if strings.HasPrefix(userType, "text/plain"){
