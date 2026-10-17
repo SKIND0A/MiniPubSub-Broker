@@ -20,4 +20,5 @@ var (
 	ErrRequstSyntax = errors.New("Ошибка синтаксиса в запросе")
 	ErrUnmarshallRequst = errors.New("Ошибка анмаршлинга запроса")
 	UnknownErr = errors.New("Неизвестная ошибка")
+	ErrRequstFlusher = errors.New("Запрос не может работать в режиме стриминга")
 )
