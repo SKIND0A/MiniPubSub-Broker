@@ -15,10 +15,10 @@ func main() {
 	Broker := broker.NewBroker()
 	Handler := handler.NewHandler(models.Message{}, Broker)
 	scanner := bufio.NewScanner(os.Stdin)
-	for{
+	for {
 		scanner.Scan()
 		Input := scanner.Text()
-		switch Input{
+		switch Input {
 		case "1":
 			handler.StartHTTPServer(Handler)
 		case "2":
@@ -26,7 +26,7 @@ func main() {
 		case "0":
 			fmt.Println("Выход из программы")
 			return
-		default: 
+		default:
 			fmt.Println("Нету такой команды")
 		}
 	}

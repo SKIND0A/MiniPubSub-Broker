@@ -256,3 +256,96 @@ func TestBroker_ConcurrentPublish_Race(t *testing.T) {
 		t.Errorf("несовпадение счетчика метрик: ожидалось %d, получено %d", expectedPublished, count)
 	}
 }
+
+func TestBroker_Close_RejectsNewOperations(t *testing.T) {
+	b := broker.NewBroker()
+	topicName := "shutdown-topic"
+
+	topic, err := b.CreateTopic(topicName)
+	if err != nil {
+		t.Fatalf("не удалось создать топик: %v", err)
+	}
+
+	sub := broker.NewSubscriber("sub-test", 10)
+	if err := topic.Subscribe(sub); err != nil {
+		t.Fatalf("не удалось подписать клиента: %v", err)
+	}
+
+	
+	b.CloseBroker()
+
+	b.CloseBroker()
+
+	select {
+	case <-sub.Quit():
+	default:
+		t.Errorf("сигнальный канал подписчика остался открытым после CloseBroker")
+	}
+
+	_, err = b.CreateTopic("another-topic")
+	if err == nil {
+		t.Errorf("ожидалась ошибка при создании топика после CloseBroker, получен nil")
+	} else if !errors.Is(err, internal.ErrTopicClosed) {
+		t.Logf("получена ошибка создания топика: %v", err)
+	}
+
+	msg := models.Message{
+		ID:     "msg-after-close",
+		Body:   []byte("test"),
+		TimeAt: time.Now(),
+	}
+	err = b.PublishTopic(topicName, msg)
+	if err == nil {
+		t.Errorf("ожидалась ошибка публикации после CloseBroker, получен nil")
+	}
+
+	newSub := broker.NewSubscriber("new-sub", 10)
+	err = topic.Subscribe(newSub)
+	if err == nil {
+		t.Errorf("ожидалась ошибка при попытке подписки на закрытый топик, получен nil")
+	}
+}
+
+func BenchmarkBroker_Publish(b *testing.B) {
+	br := broker.NewBroker()
+	topicName := "bench-topic"
+
+	topic, err := br.CreateTopic(topicName)
+	if err != nil {
+		b.Fatalf("не удалось создать тему для бенчмарка: %v", err)
+	}
+
+	sub := broker.NewSubscriber("bench-sub", 2048)
+	if err := topic.Subscribe(sub); err != nil {
+		b.Fatalf("ошибка подписки: %v", err)
+	}
+
+	go func() {
+		for {
+			select {
+			case _, ok := <-sub.Message():
+				if !ok {
+					return
+				}
+			case <-sub.Quit():
+				return
+			}
+		}
+	}()
+
+	msg := models.Message{
+		ID:     "bench-msg",
+		Body:   []byte("benchmark-payload-bytes"),
+		TimeAt: time.Now(),
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = br.PublishTopic(topicName, msg)
+	}
+
+	b.StopTimer()
+	br.CloseBroker()
+}
