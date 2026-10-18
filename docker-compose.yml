@@ -1,0 +1,15 @@
+services: 
+  broker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: minibroker-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    entrypoint: 
+      - GOMEMLIMIT=25 MiB
+    deploy:
+      resources:
+        limits:
+          memory: 300M
