@@ -1,18 +1,12 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
-
 	"github.com/SKIND0A/MiniPubSub/internal/broker"
 	internal "github.com/SKIND0A/MiniPubSub/internal/error"
 	"github.com/SKIND0A/MiniPubSub/internal/models"
