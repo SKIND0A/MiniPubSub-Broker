@@ -7,8 +7,14 @@ import (
 )
 
 type Message struct {
+	ID     string 
+	Body   []byte 
+	TimeAt time.Time 
+}
+
+type ResponseMessage struct {
 	ID     string `json:"id"`
-	Body   []byte `json:"body"`
+	Body   string `json:"body"`
 	TimeAt time.Time `json:"timeAt"`
 }
 
