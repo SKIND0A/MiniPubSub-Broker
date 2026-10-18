@@ -100,7 +100,27 @@ func (h *Handler)NewPublishHandler(w http.ResponseWriter, r * http.Request){
 }
 
 func (h *Handler)AlltopicHandler(w http.ResponseWriter, r * http.Request){
-	// ждем метод от Сережи день один
+	if r.Method != http.MethodGet{
+		http.Error(w, internal.ErrRequstMethod.Error(), http.StatusBadRequest)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 0)
+
+	AllTopic, err := h.Broker.GetAllTopics()
+	if err != nil{
+		http.Error(w, err.Error(), http.StatusBadGateway)
+	}
+	
+	Output, err := json.Marshal(AllTopic)
+	if err != nil{
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusAccepted)
+	w.Write(Output)
+
 }
 
 func (h *Handler)CreateTopicHandler(w http.ResponseWriter, r * http.Request){
@@ -117,7 +137,10 @@ func (h *Handler)CreateTopicHandler(w http.ResponseWriter, r * http.Request){
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, 0)
-	broker.NewTopic(topic)
+	if _, err := h.Broker.CreateTopic(topic); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
 
 	w.Header().Set("Content-Type","text/plain")
 	w.WriteHeader(http.StatusAccepted)
@@ -158,7 +181,13 @@ func (h *Handler)SubscribeHandler(w http.ResponseWriter, r * http.Request){
 	for {
 		select{
 			case msg := <-sub.Message() :
-				OutputM, err := json.Marshal(msg)
+				responsemsg := models.ResponseMessage{
+					ID: msg.ID,
+					Body: string(msg.Body),
+					TimeAt: msg.TimeAt,
+
+				}
+				OutputM, err := json.Marshal(responsemsg)
 				if err != nil{
 					continue
 				}
@@ -173,6 +202,7 @@ func (h *Handler)SubscribeHandler(w http.ResponseWriter, r * http.Request){
 }
 
 func StartHTTPServer(h *Handler){
+	defer h.Broker.CloseBroker()
 	fmt.Println("Запуск HTTP-сервера, для остановки нажмите ctrl+C")
 	fmt.Println("localhost:8080")
 	mux := http.NewServeMux()
@@ -195,16 +225,4 @@ func StartHTTPServer(h *Handler){
 			}
 		}
 	}()
-
-	//Улавливать килл 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	//тут
-	if err := server.Shutdown(ctx); err != nil{
-		fmt.Println(err)
-	}
-	
 }
