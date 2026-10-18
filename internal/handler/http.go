@@ -89,7 +89,7 @@ func (h *Handler)NewPublishHandler(w http.ResponseWriter, r * http.Request){
 	}
 	
 	w.Header().Set("Content-Type","text/plain")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Успешно опубликовано, ID сообщения:" + m.ID))
 }
 
@@ -137,7 +137,7 @@ func (h *Handler)CreateTopicHandler(w http.ResponseWriter, r * http.Request){
 	}
 
 	w.Header().Set("Content-Type","text/plain")
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Создан топик " + topic))
 }
 
