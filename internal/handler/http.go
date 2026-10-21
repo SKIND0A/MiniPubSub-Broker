@@ -210,7 +210,6 @@ func StartHTTPServer(h *Handler){
 	mux.HandleFunc("/api/v1/topics/{topic}",h.CreateTopicHandler)
 	mux.HandleFunc("/api/v1/topics/{topic}/publish", h.NewPublishHandler)
 
-	go func(){
 		if err := server.ListenAndServe(); err != nil{
 			if err.Error() == "http: Server closed"{
 				fmt.Println(err.Error())
@@ -218,5 +217,5 @@ func StartHTTPServer(h *Handler){
 				fmt.Print("Ошибка запуска по причине", err)
 			}
 		}
-	}()
+	
 }
