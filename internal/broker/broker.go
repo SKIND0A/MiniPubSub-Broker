@@ -53,6 +53,11 @@ func (b *Broker) GetAllTopics() ( []string, error){
 	if b.closed {
 		return  nil, internal.ErrTopicClosed
 	}
+	
+	if len(b.topics) == 0{
+		return nil, internal.ErrTopicNotCreated
+	}
+
 	AllTopics := make([]string, 0, len(b.topics))
 	for name := range b.topics{
 		AllTopics = append(AllTopics, name)
@@ -82,8 +87,8 @@ func (b *Broker) PublishTopic(topicName string, msg models.Message) error {
 	if err != nil {
 		return err
 	}
-	topic.PublishMsg(msg)
 	b.counter.Add(1)
+	topic.PublishMsg(msg)
 	return nil
 }
 

@@ -39,6 +39,8 @@ func (h *Handler)NewPublishHandler(w http.ResponseWriter, r * http.Request){
 		return
 	}
 
+	var err	error 
+	var m models.Message
 	var data models.MRequest
 	userType := r.Header.Get("Content-type") //проверка контента
 	if strings.HasPrefix(userType, "application/json"){
@@ -64,32 +66,34 @@ func (h *Handler)NewPublishHandler(w http.ResponseWriter, r * http.Request){
 					return
 			}
 		}
+		m, err  = h.msg.NewMessage([]byte(data.PayLoad))
+		if err != nil{
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}else if strings.HasPrefix(userType, "text/plain"){
 		rawBody, err := io.ReadAll(r.Body)
 		if err != nil{
 			return
 		}
 		defer r.Body.Close()
-		data = models.MRequest{
-			PayLoad: string(rawBody),
+		m, err = h.msg.NewMessage(rawBody)
+		if err != nil{
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 	}else{
 		http.Error(w, internal.ErrRequstType.Error(), http.StatusUnsupportedMediaType)
 		return
 	}
 
-	err, m := h.msg.NewMessage([]byte(data.PayLoad))
-	if err != nil{
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	if err := h.Broker.PublishTopic(topic, m); err != nil{
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type","text/plain")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Успешно опубликовано, ID сообщения:" + m.ID))
 }
 
@@ -102,7 +106,7 @@ func (h *Handler)AlltopicHandler(w http.ResponseWriter, r * http.Request){
 
 	AllTopic, err := h.Broker.GetAllTopics()
 	if err != nil{
-		http.Error(w, err.Error(), http.StatusBadGateway)
+		http.Error(w, err.Error(), http.StatusNoContent)
 	}
 	
 	Output, err := json.Marshal(AllTopic)
@@ -137,7 +141,7 @@ func (h *Handler)CreateTopicHandler(w http.ResponseWriter, r * http.Request){
 	}
 
 	w.Header().Set("Content-Type","text/plain")
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Создан топик " + topic))
 }
 
@@ -179,7 +183,6 @@ func (h *Handler)SubscribeHandler(w http.ResponseWriter, r * http.Request){
 					ID: msg.ID,
 					Body: string(msg.Body),
 					TimeAt: msg.TimeAt,
-
 				}
 				OutputM, err := json.Marshal(responsemsg)
 				if err != nil{

@@ -1,9 +1,11 @@
 package models
 
 import (
+	"bytes"
 	"time"
-	"github.com/google/uuid"
+
 	internal "github.com/SKIND0A/MiniPubSub/internal/error"
+	"github.com/google/uuid"
 )
 
 type Message struct {
@@ -22,14 +24,14 @@ type MRequest struct {
 	PayLoad string `json:"payload"`
 }
 
-func (s *Message) NewMessage(body []byte) (error, Message){
-	if body == nil{
-		return internal.ErrBodyEmpty, Message{}
+func (s *Message) NewMessage(body []byte) (Message, error){
+	if len(bytes.TrimSpace(body)) == 0{
+		return Message{}, internal.ErrBodyEmpty
 	}
 
 	s.ID = uuid.NewString()
 	s.Body = body
 	s.TimeAt = time.Now()
-	
-	return nil, *s
+
+	return *s, nil
 }

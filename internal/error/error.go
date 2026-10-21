@@ -11,14 +11,13 @@ var (
 	ErrTopicAlreadyExists = errors.New("Топик с таким именем уже существует")
 	ErrTopicNotFound      = errors.New("Топик с таким именем не найден")
 	ErrTopicClosed        = errors.New("Топик закрыт и не может быть открыт")
+	ErrTopicNotCreated    = errors.New("Топики еще не созданы")
 
 	//broker errors
 	ErrBrokerClosed = errors.New("Брокер закрыт и не может быть создан")
 
 	// DTO error
-	ErrBodyEmpty  = errors.New("Пустое тело")
-	ErrIDEmpty    = errors.New("Пустое айди")
-	ErrIDNotFound = errors.New("Сообщение с таким айди не найдено")
+	ErrBodyEmpty = errors.New("Пустое тело")
 
 	//http error
 	ErrRequstTopic      = errors.New("Не указана тема(топик)")
@@ -27,5 +26,5 @@ var (
 	ErrRequstSyntax     = errors.New("Ошибка синтаксиса в запросе")
 	ErrUnmarshallRequst = errors.New("Ошибка анмаршлинга запроса")
 	UnknownErr          = errors.New("Неизвестная ошибка")
-	ErrRequstFlusher = errors.New("Запрос не может работать в режиме стриминга")
+	ErrRequstFlusher    = errors.New("Запрос не может работать в режиме стриминга")
 )
